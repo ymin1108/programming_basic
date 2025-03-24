@@ -15,8 +15,8 @@ int main(void)
 
 	for (int i = 0; i < obj_size; i++);
 	{
-		json_value ob = json_get(batter_obj, i);
-		printf("%s\n", ob);
+		// json_value ob = json_get(batter_obj, i);
+		// printf("%s\n", ob);
 	}
 
 	json_print(json);
