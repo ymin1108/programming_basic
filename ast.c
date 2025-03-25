@@ -32,55 +32,49 @@ int main(void)
     // json_print(json);
 
     json_value ext = json_get(json, "ext");
-    int ext_size = json_len(ext);   // 55나옴
+    int ext_size = json_len(ext);
 
 
-    // ext의 value의 name을 반목문을 통해 출력
+    // ext의 value 값들
     for (int i = 0; i < ext_size; i++)
     {
+        // extdml value 값
         json_value ext_index = json_get(ext, i);
 
-
+        /*
+        _nodetype이 FuncDef 또는 Decldls 일 때만 실행
+        _nodetype = FuncDef
+        _nodetype = Decl > type._nodetype = FuncDecl
+         위 두 경우가 함수
+        */
         char *nodetype_str = json_get_string(ext_index, "_nodetype");
-        
-        if (!strcmp(nodetype_str, "FuncDef") || (!strcmp(nodetype_str, "Decl")))
+        if (!strcmp(nodetype_str, "FuncDef"))
         {
-            if(!strcmp(nodetype_str, "FuncDef"))
-            {
-                json_value funcdef_decl = json_get(ext_index,"decl");
-                char * funcdef_decl_str = json_get_string(funcdef_decl, "name");
-                if(funcdef_decl_str)
-                {
-                    printf("%s\n", funcdef_decl_str);
-                    number_of_funcdef++;
-                }
-            }
+            number_of_funcdef++;
             
-            if(!strcmp(nodetype_str, "Decl"))
-            {
-                json_value decl_type = json_get(ext_index, "type");
-                char *decl_type_nodetype = json_get_string(decl_type, "_nodetype");
-                char *decl_type_name = json_get_string(decl_type, "declname");
+            json_value funcdef_decl = json_get(ext_index,"decl");
 
-                if (!strcmp(decl_type_nodetype, "FuncDecl"))
-                {
-                    // printf("\t%s\n", decl_type_nodetype);
 
-                    if (decl_type_name)
-                    {
-                        printf("%s\n", decl_type_name);
-                        number_of_funcdef++;
-                    }
-                }
+            char *funcdef_decl_str = json_get_string(funcdef_decl, "name");
+            printf("%s\n", funcdef_decl_str);
+        }
+        
+        if (!strcmp(nodetype_str, "Decl"))
+        {
+            json_value decl_type = json_get(ext_index, "type");
+            char *decl_type_nodetype = json_get_string(decl_type, "_nodetype");
+
+            if (!strcmp(decl_type_nodetype, "FuncDecl"))
+            {   
+                number_of_funcdef++;
+                char *decl_name = json_get_string(ext_index, "name");
+                printf("%s\n", decl_name);
             }
         }
     }
     
     
-    
-    
-    
-    printf("%d", number_of_funcdef); // 함수 개수 출력
+    printf("\nNumber of function: %d", number_of_funcdef);
 
 
     // 메모리 해제
