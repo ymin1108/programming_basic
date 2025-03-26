@@ -3,6 +3,53 @@
 #include <string.h>
 #include "json_c.c"
 
+// 노드에서 if 조건 개수를 재귀적으로 카운트하는 함수
+int count_if_conditions(json_value node)
+{
+    int count = 0;
+    
+    if (node.type != JSON_OBJECT) {
+        return count;
+    }
+
+    char *nodetype_str = json_get_string(node, "_nodetype");
+    if (nodetype_str != NULL && !strcmp(nodetype_str, "If"))
+    {
+        count = 1;
+    }
+    
+    json_value block_items = json_get(node, "block_items");
+    if (block_items.type == JSON_ARRAY)
+    {
+        int items_size = json_len(block_items);
+        for (int i = 0; i < items_size; i++)
+        {
+            json_value item = json_get(block_items, i);
+            count += count_if_conditions(item);
+        }
+    }
+    
+    json_value iftrue = json_get(node, "iftrue");
+    if (iftrue.type != JSON_NULL)
+    {
+        count += count_if_conditions(iftrue);
+    }
+    
+    json_value iffalse = json_get(node, "iffalse");
+    if (iffalse.type != JSON_NULL)
+    {
+        count += count_if_conditions(iffalse);
+    }
+    
+    json_value stmt = json_get(node, "stmt");
+    if (stmt.type != JSON_NULL)
+    {
+        count += count_if_conditions(stmt);
+    }
+    
+    return count;
+}
+
 int main(void)
 {
     int number_of_funcdef = 0; // 함수의 개수
@@ -108,6 +155,11 @@ int main(void)
                     printf("\t\t%s %s\n", param_type_str, param_name);
                 }
             }
+
+            // if 조건 개수 카운트
+            json_value body = json_get(ext_index, "body");
+            int if_count = count_if_conditions(body);
+            printf("\tIf Conditions Count: %d\n", if_count);
 
             number_of_funcdef++;
         }
