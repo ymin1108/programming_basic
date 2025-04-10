@@ -4,6 +4,7 @@
 #include "json_c.c"
 
 // 노드에서 if 조건 개수를 재귀적으로 카운트하는 함수
+// 노드에서 if 조건 개수를 재귀적으로 카운트하는 함수
 int count_if_conditions(json_value node)
 {
     int count = 0;
@@ -13,38 +14,91 @@ int count_if_conditions(json_value node)
     }
 
     char *nodetype_str = json_get_string(node, "_nodetype");
-    if (nodetype_str != NULL && !strcmp(nodetype_str, "If"))
-    {
-        count = 1;
+    if (nodetype_str == NULL) {
+        return count;
     }
     
-    json_value block_items = json_get(node, "block_items");
-    if (block_items.type == JSON_ARRAY)
+    // 1. If 노드인 경우
+    if (!strcmp(nodetype_str, "If"))
     {
-        int items_size = json_len(block_items);
-        for (int i = 0; i < items_size; i++)
+        // 자신이 If 노드인 경우 카운트 증가
+        count = 1;
+        
+        // If 노드의 자식들 검사
+        json_value iftrue = json_get(node, "iftrue");
+        if (iftrue.type != JSON_NULL)
         {
-            json_value item = json_get(block_items, i);
-            count += count_if_conditions(item);
+            count += count_if_conditions(iftrue);
+        }
+        
+        json_value iffalse = json_get(node, "iffalse");
+        if (iffalse.type != JSON_NULL)
+        {
+            count += count_if_conditions(iffalse);
         }
     }
-    
-    json_value iftrue = json_get(node, "iftrue");
-    if (iftrue.type != JSON_NULL)
+    // 2. 함수 정의인 경우
+    else if (!strcmp(nodetype_str, "FuncDef"))
     {
-        count += count_if_conditions(iftrue);
+        // 함수 본문 검사
+        json_value body = json_get(node, "body");
+        if (body.type != JSON_NULL)
+        {
+            count += count_if_conditions(body);
+        }
     }
-    
-    json_value iffalse = json_get(node, "iffalse");
-    if (iffalse.type != JSON_NULL)
+    // 3. 복합 구문(블록)인 경우
+    else if (!strcmp(nodetype_str, "Compound"))
     {
-        count += count_if_conditions(iffalse);
+        // 블록 아이템 검사
+        json_value block_items = json_get(node, "block_items");
+        if (block_items.type == JSON_ARRAY)
+        {
+            int items_size = json_len(block_items);
+            for (int i = 0; i < items_size; i++)
+            {
+                json_value item = json_get(block_items, i);
+                count += count_if_conditions(item);
+            }
+        }
     }
-    
-    json_value stmt = json_get(node, "stmt");
-    if (stmt.type != JSON_NULL)
+    // 4. 반복문(For, While, DoWhile)인 경우
+    else if (!strcmp(nodetype_str, "For") || 
+             !strcmp(nodetype_str, "While") || 
+             !strcmp(nodetype_str, "DoWhile"))
     {
-        count += count_if_conditions(stmt);
+        // stmt 필드 검사
+        json_value stmt = json_get(node, "stmt");
+        if (stmt.type != JSON_NULL)
+        {
+            count += count_if_conditions(stmt);
+        }
+    }
+    // 5. Switch 문인 경우
+    else if (!strcmp(nodetype_str, "Switch"))
+    {
+        // stmt 필드 검사
+        json_value stmt = json_get(node, "stmt");
+        if (stmt.type != JSON_NULL)
+        {
+            count += count_if_conditions(stmt);
+        }
+    }
+    // 6. Case, Default 문인 경우
+    else if (!strcmp(nodetype_str, "Case") || 
+             !strcmp(nodetype_str, "Default"))
+    {
+        // stmts 배열 검사
+        json_value stmts = json_get(node, "stmts");
+        if (stmts.type == JSON_ARRAY)
+        {
+            int stmts_size = json_len(stmts);
+            for (int i = 0; i < stmts_size; i++)
+            {
+                json_value stmt = json_get(stmts, i);
+                count += count_if_conditions(stmt);
+            }
+        }
     }
     
     return count;
