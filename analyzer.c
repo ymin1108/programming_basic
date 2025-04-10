@@ -290,11 +290,11 @@ int main(void)
                         printf("\t\t%s %s\n", param_type_str, param_name);
                     }
                 }
-
+                
                 number_of_funcdef++;
             }
         }
-    }
+        }
 
     printf("\nNumber of function: %d", number_of_funcdef);
     // 메모리 해제
